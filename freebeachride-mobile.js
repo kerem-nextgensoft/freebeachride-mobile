@@ -105,6 +105,63 @@
             }
 
             /*
+ * Google Translate mobile row.
+ */
+#fbr-mobile-translate {
+    display: none;
+}
+
+html.fbr-mobile #fbr-mobile-translate {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 52px;
+    padding: 6px 16px 10px;
+    background: #ffffff;
+    border-top: 1px solid #eeeeee;
+    box-sizing: border-box;
+}
+
+html.fbr-mobile #fbr-mobile-translate #google_translate_element {
+    display: block !important;
+    width: 100% !important;
+    max-width: 320px !important;
+    margin: 0 auto !important;
+    visibility: visible !important;
+}
+
+html.fbr-mobile #fbr-mobile-translate .goog-te-gadget {
+    display: block !important;
+    width: 100% !important;
+    font-size: 0 !important;
+    visibility: visible !important;
+}
+
+html.fbr-mobile #fbr-mobile-translate .goog-te-combo {
+    display: block !important;
+    width: 100% !important;
+    min-height: 42px !important;
+    margin: 0 !important;
+    padding: 8px 10px !important;
+    color: #0B3954 !important;
+    background: #ffffff !important;
+    border: 2px solid #0B3954 !important;
+    border-radius: 5px !important;
+    font-size: 16px !important;
+    box-sizing: border-box !important;
+    visibility: visible !important;
+}
+
+/*
+ * Hide the now-empty original Builder 7 element after moving
+ * the translator into the mobile header.
+ */
+html.fbr-mobile .fbr-translate-source {
+    display: none !important;
+}
+
+            /*
              * Hide GoDaddy's original navigation when our menu is active.
              */
             html.fbr-mobile .wsb-element-navigation,
@@ -846,6 +903,157 @@
         );
     }
 
+    function createMobileTranslateSlot() {
+    var header = document.getElementById(
+        "fbr-mobile-header"
+    );
+
+    if (!header) {
+        return null;
+    }
+
+    var slot = document.getElementById(
+        "fbr-mobile-translate"
+    );
+
+    if (slot) {
+        return slot;
+    }
+
+    slot = document.createElement("div");
+    slot.id = "fbr-mobile-translate";
+    slot.setAttribute(
+        "aria-label",
+        "Choose website language"
+    );
+
+    var headerBar = document.getElementById(
+        "fbr-mobile-header-bar"
+    );
+
+    /*
+     * Insert the translator underneath the title/menu row
+     * and above the expandable navigation.
+     */
+    if (headerBar && headerBar.nextSibling) {
+        header.insertBefore(
+            slot,
+            headerBar.nextSibling
+        );
+    } else {
+        header.appendChild(slot);
+    }
+
+    return slot;
+}
+
+function moveGoogleTranslateToMobileHeader() {
+    if (!html.classList.contains("fbr-mobile")) {
+        return false;
+    }
+
+    var slot = createMobileTranslateSlot();
+
+    if (!slot) {
+        return false;
+    }
+
+    /*
+     * This is the standard ID used by the Google Translate
+     * website widget.
+     */
+    var translateElement = document.getElementById(
+        "google_translate_element"
+    );
+
+    /*
+     * Fallback in case the containing ID is different.
+     */
+    if (!translateElement) {
+        var gadget = document.querySelector(
+            ".goog-te-gadget"
+        );
+
+        if (gadget) {
+            translateElement =
+                gadget.parentElement;
+        }
+    }
+
+    if (!translateElement) {
+        return false;
+    }
+
+    if (translateElement.parentElement !== slot) {
+        var originalBuilderElement =
+            translateElement.closest(
+                '[id^="wsb-element-"]'
+            );
+
+        slot.appendChild(translateElement);
+
+        if (
+            originalBuilderElement &&
+            originalBuilderElement !== slot
+        ) {
+            originalBuilderElement.classList.add(
+                "fbr-translate-source"
+            );
+        }
+    }
+
+    translateElement.style.setProperty(
+        "display",
+        "block",
+        "important"
+    );
+
+    translateElement.style.setProperty(
+        "visibility",
+        "visible",
+        "important"
+    );
+
+    return true;
+}
+
+function initializeMobileTranslate() {
+    var attempts = 0;
+    var maximumAttempts = 30;
+
+    function tryToMoveTranslator() {
+        attempts += 1;
+
+        var moved =
+            moveGoogleTranslateToMobileHeader();
+
+        var languageDropdown =
+            document.querySelector(
+                "#fbr-mobile-translate .goog-te-combo"
+            );
+
+        if (
+            moved &&
+            languageDropdown
+        ) {
+            return;
+        }
+
+        /*
+         * Google loads the widget asynchronously, so retry
+         * for approximately 15 seconds.
+         */
+        if (attempts < maximumAttempts) {
+            window.setTimeout(
+                tryToMoveTranslator,
+                500
+            );
+        }
+    }
+
+    tryToMoveTranslator();
+}
+
     function createMobileActions() {
         if (
             document.getElementById(
@@ -923,6 +1131,7 @@
         );
 
         createMobileHeader();
+        initializeMobileTranslate();
         createMobileActions();
         syncGalleries();
         observeGalleries();
