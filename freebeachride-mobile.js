@@ -28,7 +28,7 @@
         style.id = "fbr-mobile-styles";
 
         style.textContent = `
-            html.fbr-mobile,
+            html.-mobile,
             html.fbr-mobile body {
                 width: 100% !important;
                 min-width: 0 !important;
@@ -286,8 +286,8 @@
                 min-width: 48px;
                 min-height: 44px;
                 padding: 8px 12px;
+                background: #0B3954;
                 color: #ffffff;
-                background: #111111;
                 border: 0;
                 border-radius: 4px;
                 font-size: 24px;
@@ -345,15 +345,26 @@
             }
 
             #fbr-call-button {
-                color: #111111;
                 background: #ffffff;
-                border: 2px solid #111111;
+                color: #0B3954;
+                border: 2px solid #0B3954;
             }
 
             #fbr-request-button {
-                color: #ffffff;
-                background: #111111;
-                border: 2px solid #111111;
+                 background: #C2410C;
+                 color: #ffffff;
+                 border: 2px solid #C2410C;
+            }
+
+            #fbr-call-button:hover,
+            #fbr-call-button:focus {
+                background: #EAF4F8;
+            }
+
+            #fbr-request-button:hover,
+            #fbr-request-button:focus {
+                background: #A93808;
+                border-color: #A93808;
             }
         `;
 
