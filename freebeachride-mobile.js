@@ -1,6 +1,6 @@
 (function () {
     "use strict";
-
+    console.log("v4");
     var MOBILE_BREAKPOINT = 800;
     var html = document.documentElement;
     var startedMobile = false;
