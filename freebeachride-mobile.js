@@ -3,12 +3,10 @@
 
     var MOBILE_BREAKPOINT = 800;
     var html = document.documentElement;
-    var wasMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+    var startedMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+    var galleryObserver = null;
 
-    /*
-     * Add the viewport tag required for responsive layouts.
-     */
-    function addViewportTag() {
+    function addViewport() {
         var viewport = document.querySelector('meta[name="viewport"]');
 
         if (!viewport) {
@@ -21,10 +19,7 @@
             "width=device-width, initial-scale=1, maximum-scale=5";
     }
 
-    /*
-     * Inject the mobile CSS.
-     */
-    function addMobileStyles() {
+    function addStyles() {
         if (document.getElementById("fbr-mobile-styles")) {
             return;
         }
@@ -33,38 +28,30 @@
         style.id = "fbr-mobile-styles";
 
         style.textContent = `
-            /* Prevent horizontal movement */
             html.fbr-mobile,
             html.fbr-mobile body {
                 width: 100% !important;
                 min-width: 0 !important;
                 max-width: 100% !important;
-                overflow-x: hidden !important;
                 margin: 0 !important;
+                overflow-x: hidden !important;
             }
 
-            /*
-             * Builder 7 makes the canvas fixed and scrollable.
-             * Convert it into a normal document on mobile.
-             */
-            html.fbr-mobile .wsb-canvas.body {
-                position: static !important;
-                width: 100% !important;
-                height: auto !important;
-                min-height: 100vh !important;
-                overflow: visible !important;
+            html.fbr-mobile body {
+                padding-bottom: 76px !important;
             }
 
+            html.fbr-mobile .wsb-canvas.body,
             html.fbr-mobile .wsb-canvas-page-container {
                 position: static !important;
                 width: 100% !important;
+                max-width: 100% !important;
                 height: auto !important;
+                min-height: 0 !important;
+                margin: 0 !important;
                 overflow: visible !important;
             }
 
-            /*
-             * Main Builder 7 page container.
-             */
             html.fbr-mobile #wsb-canvas-template-page {
                 position: relative !important;
                 width: 100% !important;
@@ -91,13 +78,15 @@
                 left: auto !important;
                 margin: 0 !important;
                 box-sizing: border-box !important;
+                overflow: visible !important;
             }
 
-            /*
-             * Stack Builder 7 elements vertically.
-             */
-            html.fbr-mobile #wsb-canvas-template-container > [id^="wsb-element-"],
-            html.fbr-mobile #wsb-canvas-template-footer-container > [id^="wsb-element-"] {
+            html.fbr-mobile
+                #wsb-canvas-template-container
+                > [id^="wsb-element-"],
+            html.fbr-mobile
+                #wsb-canvas-template-footer-container
+                > [id^="wsb-element-"] {
                 position: relative !important;
                 display: block !important;
                 width: 100% !important;
@@ -116,34 +105,32 @@
             }
 
             /*
-             * Decorative Builder 7 lines and shapes do not translate
-             * well into a vertical layout.
+             * Hide GoDaddy's original navigation when our menu is active.
              */
+            html.fbr-mobile .wsb-element-navigation,
+            html.fbr-mobile .wsb-navigation,
+            html.fbr-mobile .view-as-mobile,
+            html.fbr-mobile #mobile-site-link,
+            html.fbr-mobile .mobile-site-link,
+            html.fbr-mobile a[href*="view=mobile"] {
+                display: none !important;
+            }
+
             html.fbr-mobile .wsb-element-line,
             html.fbr-mobile .wsb-element-shape {
                 display: none !important;
             }
 
-            /*
-             * Replace the old desktop navigation with our mobile menu.
-             */
-            html.fbr-mobile .wsb-element-navigation {
-                display: none !important;
-            }
-
-            /*
-             * Text boxes.
-             */
             html.fbr-mobile .txt,
             html.fbr-mobile .wsb-element-text .txt {
                 width: 100% !important;
                 max-width: 100% !important;
                 height: auto !important;
                 min-height: 0 !important;
-                overflow: visible !important;
-                box-sizing: border-box !important;
                 line-height: 1.45 !important;
+                overflow: visible !important;
                 overflow-wrap: anywhere !important;
+                box-sizing: border-box !important;
             }
 
             html.fbr-mobile .txt p {
@@ -164,11 +151,9 @@
 
             html.fbr-mobile h3 {
                 font-size: clamp(21px, 6vw, 30px) !important;
+                line-height: 1.25 !important;
             }
 
-            /*
-             * Images.
-             */
             html.fbr-mobile .wsb-image-inner,
             html.fbr-mobile .wsb-image-inner > div,
             html.fbr-mobile .wsb-element-image > div {
@@ -179,8 +164,7 @@
                 overflow: visible !important;
             }
 
-            html.fbr-mobile .wsb-element-image img,
-            html.fbr-mobile img {
+            html.fbr-mobile .wsb-element-image img {
                 position: relative !important;
                 display: block !important;
                 width: auto !important;
@@ -190,14 +174,37 @@
                 right: auto !important;
                 bottom: auto !important;
                 left: auto !important;
-                margin-left: auto !important;
-                margin-right: auto !important;
+                margin: 0 auto !important;
                 object-fit: contain !important;
             }
 
             /*
-             * HTML snippets and embedded forms.
+             * Responsive home-page slideshow wrapper.
+             *
+             * The slideshow itself retains its original dimensions and is
+             * scaled proportionally so its slides, arrows and transitions
+             * continue working.
              */
+            html.fbr-mobile .fbr-gallery-wrapper {
+                position: relative !important;
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-height: 1px !important;
+                margin: 0 0 20px !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+                box-sizing: border-box !important;
+            }
+
+            html.fbr-mobile
+                .fbr-gallery-wrapper
+                > .wsb-element-gallery {
+                margin: 0 !important;
+                padding: 0 !important;
+                transform-origin: top left !important;
+            }
+
             html.fbr-mobile .wsb-htmlsnippet-element,
             html.fbr-mobile .wsb-element-htmlsnippet,
             html.fbr-mobile .wsb-element-htmlsnippet > div {
@@ -219,25 +226,18 @@
                 border: 0 !important;
             }
 
-            /*
-             * Give the ride-request form enough room.
-             * Adjust this if the form ends sooner or continues farther.
-             */
             html.fbr-mobile body.fbr-request-page iframe {
                 min-height: 1050px !important;
             }
 
-            /*
-             * Forms and touch targets.
-             */
             html.fbr-mobile input,
             html.fbr-mobile select,
             html.fbr-mobile textarea,
             html.fbr-mobile button {
                 max-width: 100% !important;
                 min-height: 44px !important;
-                box-sizing: border-box !important;
                 font-size: 16px !important;
+                box-sizing: border-box !important;
             }
 
             html.fbr-mobile textarea {
@@ -251,10 +251,8 @@
                 overflow-x: auto !important;
             }
 
-            /*
-             * Mobile header.
-             */
-            #fbr-mobile-header {
+            #fbr-mobile-header,
+            #fbr-mobile-actions {
                 display: none;
             }
 
@@ -280,9 +278,7 @@
 
             #fbr-mobile-home {
                 color: #111111;
-                font-family: Arial, sans-serif;
-                font-size: 18px;
-                font-weight: 700;
+                font: 700 18px Arial, sans-serif;
                 text-decoration: none;
             }
 
@@ -290,8 +286,8 @@
                 min-width: 48px;
                 min-height: 44px;
                 padding: 8px 12px;
-                background: #111111;
                 color: #ffffff;
+                background: #111111;
                 border: 0;
                 border-radius: 4px;
                 font-size: 24px;
@@ -315,18 +311,9 @@
                 padding: 14px 8px;
                 color: #111111;
                 border-bottom: 1px solid #e5e5e5;
-                box-sizing: border-box;
-                font-family: Arial, sans-serif;
-                font-size: 16px;
-                font-weight: 600;
+                font: 600 16px Arial, sans-serif;
                 text-decoration: none;
-            }
-
-            /*
-             * Persistent ride buttons.
-             */
-            #fbr-mobile-actions {
-                display: none;
+                box-sizing: border-box;
             }
 
             html.fbr-mobile #fbr-mobile-actions {
@@ -351,28 +338,22 @@
                 min-height: 50px;
                 padding: 10px;
                 border-radius: 5px;
-                font-family: Arial, sans-serif;
-                font-size: 15px;
-                font-weight: 700;
+                font: 700 15px Arial, sans-serif;
                 text-align: center;
                 text-decoration: none;
                 box-sizing: border-box;
             }
 
             #fbr-call-button {
-                background: #ffffff;
                 color: #111111;
+                background: #ffffff;
                 border: 2px solid #111111;
             }
 
             #fbr-request-button {
-                background: #111111;
                 color: #ffffff;
+                background: #111111;
                 border: 2px solid #111111;
-            }
-
-            html.fbr-mobile body {
-                padding-bottom: 76px !important;
             }
         `;
 
@@ -380,30 +361,278 @@
     }
 
     /*
-     * Builder 7 elements are absolutely positioned.
-     * Reorder them using their original vertical coordinates before
-     * converting them into normal document-flow elements.
+     * Capture the original slideshow dimensions before mobile styling is
+     * applied. Builder 7 depends on these fixed dimensions.
      */
-    function stackBuilderElements(container) {
-        if (!container || container.getAttribute("data-fbr-stacked") === "1") {
+    function captureGallerySizes() {
+        Array.prototype.slice.call(
+            document.querySelectorAll(".wsb-element-gallery")
+        ).forEach(function (gallery) {
+            if (gallery.getAttribute("data-fbr-original-width")) {
+                return;
+            }
+
+            var computed = window.getComputedStyle(gallery);
+            var rect = gallery.getBoundingClientRect();
+
+            var width =
+                parseFloat(gallery.style.width) ||
+                parseFloat(computed.width) ||
+                rect.width ||
+                gallery.offsetWidth;
+
+            var height =
+                parseFloat(gallery.style.height) ||
+                parseFloat(computed.height) ||
+                rect.height ||
+                gallery.offsetHeight;
+
+            /*
+             * Fallback dimensions in case Builder 7 has not finished
+             * rendering the slideshow yet.
+             */
+            if (!width || width < 1) {
+                width = 947;
+            }
+
+            if (!height || height < 1) {
+                height = Math.round(width * 0.5);
+            }
+
+            gallery.setAttribute(
+                "data-fbr-original-width",
+                String(width)
+            );
+
+            gallery.setAttribute(
+                "data-fbr-original-height",
+                String(height)
+            );
+        });
+    }
+
+    function wrapGalleries() {
+        Array.prototype.slice.call(
+            document.querySelectorAll(".wsb-element-gallery")
+        ).forEach(function (gallery) {
+            if (
+                gallery.parentElement &&
+                gallery.parentElement.classList.contains(
+                    "fbr-gallery-wrapper"
+                )
+            ) {
+                return;
+            }
+
+            if (!gallery.parentNode) {
+                return;
+            }
+
+            var wrapper = document.createElement("div");
+            wrapper.className = "fbr-gallery-wrapper";
+
+            gallery.parentNode.insertBefore(wrapper, gallery);
+            wrapper.appendChild(gallery);
+        });
+    }
+
+    function setImportant(element, property, value) {
+        if (element) {
+            element.style.setProperty(
+                property,
+                value,
+                "important"
+            );
+        }
+    }
+
+    function resizeGalleries() {
+        if (!html.classList.contains("fbr-mobile")) {
             return;
         }
 
-        var items = Array.prototype.slice.call(container.children)
+        Array.prototype.slice.call(
+            document.querySelectorAll(".fbr-gallery-wrapper")
+        ).forEach(function (wrapper) {
+            var gallery;
+
+            try {
+                gallery = wrapper.querySelector(
+                    ":scope > .wsb-element-gallery"
+                );
+            } catch (error) {
+                gallery = wrapper.firstElementChild;
+            }
+
+            if (!gallery) {
+                gallery = wrapper.firstElementChild;
+            }
+
+            if (!gallery) {
+                return;
+            }
+
+            var originalWidth = parseFloat(
+                gallery.getAttribute(
+                    "data-fbr-original-width"
+                )
+            );
+
+            var originalHeight = parseFloat(
+                gallery.getAttribute(
+                    "data-fbr-original-height"
+                )
+            );
+
+            if (!originalWidth || !originalHeight) {
+                return;
+            }
+
+            var parentWidth = wrapper.parentElement
+                ? wrapper.parentElement.clientWidth
+                : 0;
+
+            var availableWidth =
+                wrapper.clientWidth ||
+                parentWidth ||
+                Math.max(1, window.innerWidth - 36);
+
+            var scale = Math.min(
+                1,
+                availableWidth / originalWidth
+            );
+
+            var scaledHeight = Math.max(
+                1,
+                Math.round(originalHeight * scale)
+            );
+
+            wrapper.style.height = scaledHeight + "px";
+
+            setImportant(gallery, "position", "absolute");
+            setImportant(gallery, "top", "0px");
+            setImportant(gallery, "right", "auto");
+            setImportant(gallery, "bottom", "auto");
+            setImportant(gallery, "left", "0px");
+
+            setImportant(
+                gallery,
+                "width",
+                originalWidth + "px"
+            );
+
+            setImportant(
+                gallery,
+                "max-width",
+                originalWidth + "px"
+            );
+
+            setImportant(
+                gallery,
+                "height",
+                originalHeight + "px"
+            );
+
+            setImportant(
+                gallery,
+                "min-height",
+                originalHeight + "px"
+            );
+
+            setImportant(
+                gallery,
+                "transform",
+                "scale(" + scale + ")"
+            );
+
+            setImportant(
+                gallery,
+                "transform-origin",
+                "top left"
+            );
+
+            setImportant(
+                gallery,
+                "overflow",
+                "hidden"
+            );
+        });
+    }
+
+    function syncGalleries() {
+        captureGallerySizes();
+        wrapGalleries();
+        resizeGalleries();
+    }
+
+    function observeGalleries() {
+        if (
+            !("MutationObserver" in window) ||
+            galleryObserver
+        ) {
+            return;
+        }
+
+        galleryObserver = new MutationObserver(
+            function (mutations) {
+                var added = mutations.some(
+                    function (mutation) {
+                        return (
+                            mutation.addedNodes &&
+                            mutation.addedNodes.length > 0
+                        );
+                    }
+                );
+
+                if (added) {
+                    window.setTimeout(syncGalleries, 0);
+                }
+            }
+        );
+
+        galleryObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    }
+
+    /*
+     * Builder 7 absolutely positions each element. Capture its original
+     * vertical position and reorder the elements before converting them
+     * into normal document flow.
+     */
+    function stackElements(container) {
+        if (
+            !container ||
+            container.getAttribute("data-fbr-stacked") === "1"
+        ) {
+            return;
+        }
+
+        var items = Array.prototype.slice
+            .call(container.children)
             .filter(function (element) {
-                return element.id &&
-                    element.id.indexOf("wsb-element-") === 0;
+                return (
+                    element.id &&
+                    element.id.indexOf("wsb-element-") === 0
+                );
             })
             .map(function (element, index) {
-                var computed = window.getComputedStyle(element);
+                var computed =
+                    window.getComputedStyle(element);
+
                 var top = parseFloat(computed.top);
                 var left = parseFloat(computed.left);
 
                 return {
                     element: element,
                     index: index,
-                    top: isNaN(top) ? element.offsetTop : top,
-                    left: isNaN(left) ? element.offsetLeft : left
+                    top: isNaN(top)
+                        ? element.offsetTop
+                        : top,
+                    left: isNaN(left)
+                        ? element.offsetLeft
+                        : left
                 };
             });
 
@@ -412,18 +641,27 @@
                 return a.left - b.left;
             }
 
-            return a.top - b.top || a.index - b.index;
+            return (
+                a.top - b.top ||
+                a.index - b.index
+            );
         });
 
         items.forEach(function (item) {
             container.appendChild(item.element);
         });
 
-        container.setAttribute("data-fbr-stacked", "1");
+        container.setAttribute(
+            "data-fbr-stacked",
+            "1"
+        );
     }
 
     function getNavigationLinks() {
-        var navigation = document.querySelector(".wsb-element-navigation");
+        var navigation = document.querySelector(
+            ".wsb-element-navigation"
+        );
+
         var links = [];
         var seen = {};
 
@@ -431,10 +669,18 @@
             Array.prototype.slice.call(
                 navigation.querySelectorAll("a[href]")
             ).forEach(function (link) {
-                var text = (link.textContent || "").trim();
-                var href = link.getAttribute("href");
+                var text =
+                    (link.textContent || "").trim();
 
-                if (!text || !href || href === "#" || seen[href]) {
+                var href =
+                    link.getAttribute("href");
+
+                if (
+                    !text ||
+                    !href ||
+                    href === "#" ||
+                    seen[href]
+                ) {
                     return;
                 }
 
@@ -448,12 +694,14 @@
         }
 
         /*
-         * Fallback links in case Builder 7's navigation is not available
-         * when this script runs.
+         * Fallback menu links if the original navigation has not loaded.
          */
         if (!links.length) {
             links = [
-                { text: "Home", href: "/" },
+                {
+                    text: "Home",
+                    href: "/"
+                },
                 {
                     text: "Request Ride Now",
                     href: "/request-ride-now-.html"
@@ -481,79 +729,144 @@
     }
 
     function createMobileHeader() {
-        if (document.getElementById("fbr-mobile-header")) {
+        if (
+            document.getElementById(
+                "fbr-mobile-header"
+            )
+        ) {
             return;
         }
 
         var pageContainer =
-            document.querySelector(".wsb-canvas-page-container") ||
+            document.querySelector(
+                ".wsb-canvas-page-container"
+            ) ||
             document.body;
 
-        var header = document.createElement("header");
-        header.id = "fbr-mobile-header";
+        var header =
+            document.createElement("header");
 
-        var bar = document.createElement("div");
+        var bar =
+            document.createElement("div");
+
+        var home =
+            document.createElement("a");
+
+        var button =
+            document.createElement("button");
+
+        var menu =
+            document.createElement("nav");
+
+        header.id = "fbr-mobile-header";
         bar.id = "fbr-mobile-header-bar";
 
-        var home = document.createElement("a");
         home.id = "fbr-mobile-home";
         home.href = "/";
         home.textContent = "Free Beach Ride";
 
-        var button = document.createElement("button");
         button.id = "fbr-menu-button";
         button.type = "button";
-        button.setAttribute("aria-expanded", "false");
-        button.setAttribute("aria-controls", "fbr-mobile-menu");
-        button.setAttribute("aria-label", "Open navigation menu");
+
+        button.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+        button.setAttribute(
+            "aria-controls",
+            "fbr-mobile-menu"
+        );
+
+        button.setAttribute(
+            "aria-label",
+            "Open navigation menu"
+        );
+
         button.textContent = "☰";
 
-        var menu = document.createElement("nav");
         menu.id = "fbr-mobile-menu";
 
-        getNavigationLinks().forEach(function (item) {
-            var link = document.createElement("a");
-            link.href = item.href;
-            link.textContent = item.text;
-            menu.appendChild(link);
-        });
+        getNavigationLinks().forEach(
+            function (item) {
+                var link =
+                    document.createElement("a");
 
-        button.addEventListener("click", function () {
-            var isOpen = menu.classList.toggle("fbr-open");
+                link.href = item.href;
+                link.textContent = item.text;
+                menu.appendChild(link);
+            }
+        );
 
-            button.setAttribute(
-                "aria-expanded",
-                isOpen ? "true" : "false"
-            );
+        button.addEventListener(
+            "click",
+            function () {
+                var isOpen =
+                    menu.classList.toggle(
+                        "fbr-open"
+                    );
 
-            button.textContent = isOpen ? "×" : "☰";
-        });
+                button.setAttribute(
+                    "aria-expanded",
+                    isOpen ? "true" : "false"
+                );
+
+                button.setAttribute(
+                    "aria-label",
+                    isOpen
+                        ? "Close navigation menu"
+                        : "Open navigation menu"
+                );
+
+                button.textContent =
+                    isOpen ? "×" : "☰";
+            }
+        );
 
         bar.appendChild(home);
         bar.appendChild(button);
+
         header.appendChild(bar);
         header.appendChild(menu);
 
-        pageContainer.insertBefore(header, pageContainer.firstChild);
+        pageContainer.insertBefore(
+            header,
+            pageContainer.firstChild
+        );
     }
 
     function createMobileActions() {
-        if (document.getElementById("fbr-mobile-actions")) {
+        if (
+            document.getElementById(
+                "fbr-mobile-actions"
+            )
+        ) {
             return;
         }
 
-        var actions = document.createElement("div");
+        var actions =
+            document.createElement("div");
+
+        var callButton =
+            document.createElement("a");
+
+        var requestButton =
+            document.createElement("a");
+
         actions.id = "fbr-mobile-actions";
 
-        var callButton = document.createElement("a");
         callButton.id = "fbr-call-button";
         callButton.href = "tel:+17277767553";
         callButton.textContent = "Call for a Ride";
 
-        var requestButton = document.createElement("a");
-        requestButton.id = "fbr-request-button";
-        requestButton.href = "/request-ride-now-.html";
-        requestButton.textContent = "Request Ride";
+        requestButton.id =
+            "fbr-request-button";
+
+        requestButton.href =
+            "/request-ride-now-.html";
+
+        requestButton.textContent =
+            "Request Ride";
 
         actions.appendChild(callButton);
         actions.appendChild(requestButton);
@@ -562,21 +875,37 @@
     }
 
     function applyMobileLayout() {
-        if (window.innerWidth > MOBILE_BREAKPOINT) {
+        if (
+            window.innerWidth >
+            MOBILE_BREAKPOINT
+        ) {
             return;
         }
 
+        /*
+         * Capture the slideshow dimensions before the mobile class applies.
+         */
+        captureGallerySizes();
+
         html.classList.add("fbr-mobile");
 
-        if (/request-ride/i.test(window.location.pathname)) {
-            document.body.classList.add("fbr-request-page");
+        if (
+            /request-ride/i.test(
+                window.location.pathname
+            )
+        ) {
+            document.body.classList.add(
+                "fbr-request-page"
+            );
         }
 
-        stackBuilderElements(
-            document.getElementById("wsb-canvas-template-container")
+        stackElements(
+            document.getElementById(
+                "wsb-canvas-template-container"
+            )
         );
 
-        stackBuilderElements(
+        stackElements(
             document.getElementById(
                 "wsb-canvas-template-footer-container"
             )
@@ -584,35 +913,73 @@
 
         createMobileHeader();
         createMobileActions();
+        syncGalleries();
+        observeGalleries();
+
+        /*
+         * Builder 7 sometimes initializes the slideshow after DOM ready.
+         */
+        window.setTimeout(
+            syncGalleries,
+            100
+        );
+
+        window.setTimeout(
+            syncGalleries,
+            500
+        );
+
+        window.setTimeout(
+            syncGalleries,
+            1500
+        );
     }
 
     function initialize() {
-        addViewportTag();
-        addMobileStyles();
+        addViewport();
+        addStyles();
         applyMobileLayout();
     }
 
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initialize);
+    if (
+        document.readyState === "loading"
+    ) {
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize
+        );
     } else {
         initialize();
     }
 
-    /*
-     * Reload only when resizing across the mobile breakpoint.
-     * This prevents desktop styles from remaining after rotation or resize.
-     */
     var resizeTimer;
 
-    window.addEventListener("resize", function () {
-        window.clearTimeout(resizeTimer);
+    window.addEventListener(
+        "resize",
+        function () {
+            window.clearTimeout(resizeTimer);
 
-        resizeTimer = window.setTimeout(function () {
-            var isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+            resizeTimer =
+                window.setTimeout(
+                    function () {
+                        var isMobile =
+                            window.innerWidth <=
+                            MOBILE_BREAKPOINT;
 
-            if (isMobile !== wasMobile) {
-                window.location.reload();
-            }
-        }, 300);
-    });
+                        if (
+                            isMobile !==
+                            startedMobile
+                        ) {
+                            window.location.reload();
+                            return;
+                        }
+
+                        if (isMobile) {
+                            resizeGalleries();
+                        }
+                    },
+                    300
+                );
+        }
+    );
 })();
