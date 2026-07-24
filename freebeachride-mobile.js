@@ -1,15 +1,50 @@
 (function () {
     "use strict";
 
-    console.log("Free Beach Ride mobile script v7");
+    console.log("Free Beach Ride mobile script v8");
 
     var MOBILE_BREAKPOINT = 800;
-    var REQUEST_PATH_PATTERN = /request-ride/i;
     var html = document.documentElement;
     var startedMobile = false;
-    var observer = null;
+    var pageObserver = null;
     var observerTimer = null;
     var resizeTimer = null;
+
+    function getPath() {
+        var path = (
+            window.location.pathname || "/"
+        )
+            .replace(/\/{2,}/g, "/")
+            .toLowerCase();
+
+        if (
+            path.length > 1 &&
+            path.charAt(path.length - 1) === "/"
+        ) {
+            path = path.slice(0, -1);
+        }
+
+        return path;
+    }
+
+    function isRequestPage() {
+        var path = getPath();
+
+        return (
+            path === "/" ||
+            path === "/index.html" ||
+            path === "/request-ride-now-.html"
+        );
+    }
+
+    function isHomePage() {
+        var path = getPath();
+
+        return (
+            path === "/home-1" ||
+            path === "/home-1.html"
+        );
+    }
 
     function isMobileWidth() {
         var viewportWidth =
@@ -18,19 +53,16 @@
             9999;
 
         var screenWidth =
-            window.screen && window.screen.width
+            window.screen &&
+            window.screen.width
                 ? window.screen.width
                 : viewportWidth;
 
         return (
-            Math.min(viewportWidth, screenWidth) <=
-            MOBILE_BREAKPOINT
-        );
-    }
-
-    function isRequestPage() {
-        return REQUEST_PATH_PATTERN.test(
-            window.location.pathname
+            Math.min(
+                viewportWidth,
+                screenWidth
+            ) <= MOBILE_BREAKPOINT
         );
     }
 
@@ -48,7 +80,9 @@
         }
     }
 
-    function closestBuilderElement(element) {
+    function closestBuilderElement(
+        element
+    ) {
         while (
             element &&
             element !== document.body
@@ -62,23 +96,30 @@
                 return element;
             }
 
-            element = element.parentElement;
+            element =
+                element.parentElement;
         }
 
         return null;
     }
 
     function addViewport() {
-        var viewport = document.querySelector(
-            'meta[name="viewport"]'
-        );
+        var viewport =
+            document.querySelector(
+                'meta[name="viewport"]'
+            );
 
         if (!viewport) {
             viewport =
-                document.createElement("meta");
+                document.createElement(
+                    "meta"
+                );
 
             viewport.name = "viewport";
-            document.head.appendChild(viewport);
+
+            document.head.appendChild(
+                viewport
+            );
         }
 
         viewport.content =
@@ -95,9 +136,12 @@
         }
 
         var style =
-            document.createElement("style");
+            document.createElement(
+                "style"
+            );
 
-        style.id = "fbr-mobile-styles";
+        style.id =
+            "fbr-mobile-styles";
 
         style.textContent = `
             html.fbr-mobile,
@@ -105,62 +149,23 @@
                 width: 100% !important;
                 min-width: 0 !important;
                 max-width: 100% !important;
+                height: auto !important;
+                min-height: 100% !important;
+                max-height: none !important;
                 margin: 0 !important;
                 overflow-x: hidden !important;
             }
 
             html.fbr-mobile body {
+                min-height: 100vh !important;
                 padding-bottom: 76px !important;
+                overflow-y: auto !important;
+                box-sizing: border-box !important;
             }
 
             html.fbr-mobile .wsb-canvas.body,
-            html.fbr-mobile .wsb-canvas-page-container {
-                position: static !important;
-                width: 100% !important;
-                min-width: 0 !important;
-                max-width: 100% !important;
-                height: auto !important;
-                min-height: 0 !important;
-                margin: 0 !important;
-                overflow: visible !important;
-            }
-
-            html.fbr-mobile #wsb-canvas-template-page {
-                position: relative !important;
-                width: 100% !important;
-                min-width: 0 !important;
-                max-width: 100% !important;
-                height: auto !important;
-                min-height: 0 !important;
-                margin: 0 !important;
-                padding: 18px !important;
-                box-sizing: border-box !important;
-            }
-
-            html.fbr-mobile #wsb-canvas-template-container,
-            html.fbr-mobile #wsb-canvas-template-footer,
-            html.fbr-mobile #wsb-canvas-template-footer-container {
-                position: relative !important;
-                width: 100% !important;
-                min-width: 0 !important;
-                max-width: 100% !important;
-                height: auto !important;
-                min-height: 0 !important;
-                top: auto !important;
-                right: auto !important;
-                bottom: auto !important;
-                left: auto !important;
-                margin: 0 !important;
-                overflow: visible !important;
-                box-sizing: border-box !important;
-            }
-
             html.fbr-mobile
-                #wsb-canvas-template-container
-                > [id^="wsb-element-"]:not(.fbr-skip-stack),
-            html.fbr-mobile
-                #wsb-canvas-template-footer-container
-                > [id^="wsb-element-"]:not(.fbr-skip-stack) {
+                .wsb-canvas-page-container {
                 position: relative !important;
                 display: block !important;
                 width: 100% !important;
@@ -168,6 +173,76 @@
                 max-width: 100% !important;
                 height: auto !important;
                 min-height: 0 !important;
+                max-height: none !important;
+                margin: 0 !important;
+                overflow: visible !important;
+                box-sizing: border-box !important;
+            }
+
+            html.fbr-mobile
+                .wsb-canvas.body {
+                min-height: 100vh !important;
+            }
+
+            html.fbr-mobile
+                #wsb-canvas-template-page {
+                position: relative !important;
+                display: block !important;
+                width: 100% !important;
+                min-width: 0 !important;
+                max-width: 100% !important;
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                margin: 0 !important;
+                padding: 18px !important;
+                overflow: visible !important;
+                box-sizing: border-box !important;
+            }
+
+            html.fbr-mobile
+                #wsb-canvas-template-container,
+            html.fbr-mobile
+                #wsb-canvas-template-footer,
+            html.fbr-mobile
+                #wsb-canvas-template-footer-container {
+                position: relative !important;
+                display: block !important;
+                width: 100% !important;
+                min-width: 0 !important;
+                max-width: 100% !important;
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                top: auto !important;
+                right: auto !important;
+                bottom: auto !important;
+                left: auto !important;
+                margin: 0 !important;
+                overflow: visible !important;
+                clear: both !important;
+                box-sizing: border-box !important;
+            }
+
+            html.fbr-mobile
+                #wsb-canvas-template-container
+                > [id^="wsb-element-"]:not(
+                    .fbr-skip-stack
+                ),
+            html.fbr-mobile
+                #wsb-canvas-template-footer-container
+                > [id^="wsb-element-"]:not(
+                    .fbr-skip-stack
+                ) {
+                position: relative !important;
+                display: block !important;
+                float: none !important;
+                width: 100% !important;
+                min-width: 0 !important;
+                max-width: 100% !important;
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
                 top: auto !important;
                 right: auto !important;
                 bottom: auto !important;
@@ -179,45 +254,61 @@
                 box-sizing: border-box !important;
             }
 
-            html.fbr-mobile .wsb-element-navigation,
-            html.fbr-mobile .wsb-navigation,
-            html.fbr-mobile .fbr-legacy-navigation,
-            html.fbr-mobile .view-as-mobile,
-            html.fbr-mobile #mobile-site-link,
-            html.fbr-mobile .mobile-site-link,
-            html.fbr-mobile a[href*="view=mobile"] {
+            html.fbr-mobile
+                .wsb-element-navigation,
+            html.fbr-mobile
+                .wsb-navigation,
+            html.fbr-mobile
+                .fbr-legacy-navigation,
+            html.fbr-mobile
+                .view-as-mobile,
+            html.fbr-mobile
+                #mobile-site-link,
+            html.fbr-mobile
+                .mobile-site-link,
+            html.fbr-mobile
+                a[href*="view=mobile"] {
                 display: none !important;
                 visibility: hidden !important;
                 width: 0 !important;
+                min-width: 0 !important;
                 max-width: 0 !important;
                 height: 0 !important;
                 min-height: 0 !important;
+                max-height: 0 !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 border: 0 !important;
                 overflow: hidden !important;
             }
 
-            html.fbr-mobile .fbr-translate-source {
+            html.fbr-mobile
+                .fbr-translate-source {
                 display: none !important;
                 visibility: hidden !important;
                 width: 0 !important;
+                min-width: 0 !important;
                 max-width: 0 !important;
                 height: 0 !important;
                 min-height: 0 !important;
+                max-height: 0 !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 border: 0 !important;
                 overflow: hidden !important;
             }
 
-            html.fbr-mobile .wsb-element-line,
-            html.fbr-mobile .wsb-element-shape {
+            html.fbr-mobile
+                .wsb-element-line,
+            html.fbr-mobile
+                .wsb-element-shape {
                 display: none !important;
             }
 
             html.fbr-mobile .txt,
-            html.fbr-mobile .wsb-element-text .txt {
+            html.fbr-mobile
+                .wsb-element-text
+                .txt {
                 width: 100% !important;
                 max-width: 100% !important;
                 height: auto !important;
@@ -267,8 +358,11 @@
                 line-height: 1.25 !important;
             }
 
-            html.fbr-mobile .wsb-image-inner,
-            html.fbr-mobile .wsb-image-inner > div,
+            html.fbr-mobile
+                .wsb-image-inner,
+            html.fbr-mobile
+                .wsb-image-inner
+                > div,
             html.fbr-mobile
                 .wsb-element-image
                 > div {
@@ -317,11 +411,6 @@
                     top left !important;
             }
 
-            /*
-             * Resize only the outer HTML snippet boxes.
-             * Do not modify their inner divs because the
-             * request form is rendered inside those elements.
-             */
             html.fbr-mobile
                 .wsb-element-htmlsnippet,
             html.fbr-mobile
@@ -340,7 +429,9 @@
 
             html.fbr-mobile
                 body:not(.fbr-request-page)
-                iframe:not(.goog-te-banner-frame),
+                iframe:not(
+                    .goog-te-banner-frame
+                ),
             html.fbr-mobile video,
             html.fbr-mobile embed {
                 display: block !important;
@@ -350,9 +441,6 @@
                 border: 0 !important;
             }
 
-            /*
-             * Request Ride page.
-             */
             html.fbr-mobile
                 body.fbr-request-page
                 #wsb-canvas-template-page {
@@ -362,13 +450,7 @@
 
             html.fbr-mobile
                 body.fbr-request-page
-                #wsb-canvas-template-container {
-                width: 100% !important;
-                min-width: 0 !important;
-                max-width: 100% !important;
-                overflow: visible !important;
-            }
-
+                #wsb-canvas-template-container,
             html.fbr-mobile
                 body.fbr-request-page
                 .fbr-request-widget,
@@ -378,56 +460,19 @@
             html.fbr-mobile
                 body.fbr-request-page
                 .wsb-htmlsnippet-element {
-                position: relative !important;
-                display: block !important;
                 width: 100% !important;
                 min-width: 0 !important;
                 max-width: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                transform: none !important;
                 overflow: visible !important;
                 box-sizing: border-box !important;
             }
 
             html.fbr-mobile
                 body.fbr-request-page
-                .fbr-request-widget
-                form,
-            html.fbr-mobile
-                body.fbr-request-page
-                .fbr-request-widget
-                table {
-                width: 100% !important;
-                min-width: 0 !important;
-                max-width: 100% !important;
-                box-sizing: border-box !important;
-            }
-
-            html.fbr-mobile
-                body.fbr-request-page
-                .fbr-request-widget
-                input,
-            html.fbr-mobile
-                body.fbr-request-page
-                .fbr-request-widget
-                select,
-            html.fbr-mobile
-                body.fbr-request-page
-                .fbr-request-widget
-                textarea,
-            html.fbr-mobile
-                body.fbr-request-page
-                .fbr-request-widget
-                button {
-                max-width: 100% !important;
-                box-sizing: border-box !important;
-            }
-
-            html.fbr-mobile
-                body.fbr-request-page
                 #wsb-canvas-template-container
-                iframe:not(.goog-te-banner-frame) {
+                iframe:not(
+                    .goog-te-banner-frame
+                ) {
                 position: relative !important;
                 display: block !important;
                 width: 1px !important;
@@ -442,6 +487,21 @@
                 box-sizing: border-box !important;
             }
 
+            html.fbr-mobile
+                body.fbr-home-page
+                .wsb-canvas.body {
+                min-height: 100vh !important;
+            }
+
+            html.fbr-mobile
+                body.fbr-home-page
+                .wsb-canvas-page-container {
+                min-height:
+                    calc(
+                        100vh - 76px
+                    ) !important;
+            }
+
             html.fbr-mobile input,
             html.fbr-mobile select,
             html.fbr-mobile textarea,
@@ -454,10 +514,6 @@
 
             html.fbr-mobile textarea {
                 min-height: 120px !important;
-            }
-
-            html.fbr-mobile table {
-                max-width: 100% !important;
             }
 
             #fbr-mobile-header,
@@ -707,8 +763,10 @@
                 box-sizing: border-box !important;
             }
 
-            #fbr-mobile-menu-links a:hover,
-            #fbr-mobile-menu-links a:focus {
+            #fbr-mobile-menu-links
+                a:hover,
+            #fbr-mobile-menu-links
+                a:focus {
                 background: #f3f7f9 !important;
             }
 
@@ -778,11 +836,14 @@
             #fbr-request-button:hover,
             #fbr-request-button:focus {
                 background: #A93808 !important;
-                border-color: #A93808 !important;
+                border-color:
+                    #A93808 !important;
             }
         `;
 
-        document.head.appendChild(style);
+        document.head.appendChild(
+            style
+        );
     }
 
     function findTranslateElement() {
@@ -809,13 +870,11 @@
         var translateElement =
             findTranslateElement();
 
-        var source;
-
         if (!translateElement) {
             return;
         }
 
-        source =
+        var source =
             closestBuilderElement(
                 translateElement
             );
@@ -855,7 +914,9 @@
                         .trim();
 
                 var href =
-                    link.getAttribute("href");
+                    link.getAttribute(
+                        "href"
+                    );
 
                 if (
                     !text ||
@@ -882,7 +943,7 @@
             links = [
                 {
                     text: "Home",
-                    href: "/"
+                    href: "/home-1.html"
                 },
                 {
                     text: "About Us",
@@ -912,8 +973,7 @@
                 },
                 {
                     text: "Request Ride Now",
-                    href:
-                        "/request-ride-now-.html"
+                    href: "/"
                 }
             ];
         }
@@ -926,9 +986,9 @@
             document.querySelectorAll(
                 ".wsb-element-navigation, .wsb-navigation"
             )
-        ).forEach(function (navigation) {
-            var wrapper;
-
+        ).forEach(function (
+            navigation
+        ) {
             navigation.classList.add(
                 "fbr-legacy-navigation"
             );
@@ -981,7 +1041,7 @@
                 "hidden"
             );
 
-            wrapper =
+            var wrapper =
                 closestBuilderElement(
                     navigation
                 );
@@ -1057,8 +1117,6 @@
                     ""
                 ).trim();
 
-            var wrapper;
-
             if (
                 !/view on mobile/i.test(
                     text
@@ -1073,8 +1131,10 @@
                 "none"
             );
 
-            wrapper =
-                closestBuilderElement(link);
+            var wrapper =
+                closestBuilderElement(
+                    link
+                );
 
             if (wrapper) {
                 wrapper.classList.add(
@@ -1109,15 +1169,6 @@
     }
 
     function createMobileHeader() {
-        var pageContainer;
-        var header;
-        var headerBar;
-        var home;
-        var button;
-        var menu;
-        var translateSlot;
-        var menuLinks;
-
         if (
             document.getElementById(
                 "fbr-mobile-header"
@@ -1126,35 +1177,35 @@
             return;
         }
 
-        pageContainer =
+        var pageContainer =
             document.querySelector(
                 ".wsb-canvas-page-container"
             ) ||
             document.body;
 
-        header =
+        var header =
             document.createElement(
                 "header"
             );
 
-        headerBar =
+        var headerBar =
             document.createElement("div");
 
-        home =
+        var home =
             document.createElement("a");
 
-        button =
+        var button =
             document.createElement(
                 "button"
             );
 
-        menu =
+        var menu =
             document.createElement("nav");
 
-        translateSlot =
+        var translateSlot =
             document.createElement("div");
 
-        menuLinks =
+        var menuLinks =
             document.createElement("div");
 
         header.id =
@@ -1178,7 +1229,9 @@
         menuLinks.id =
             "fbr-mobile-menu-links";
 
-        home.href = "/";
+        home.href =
+            "/home-1.html";
+
         home.textContent =
             "Free Beach Ride";
 
@@ -1198,24 +1251,6 @@
         button.setAttribute(
             "aria-label",
             "Open navigation menu"
-        );
-
-        setImportant(
-            button,
-            "background",
-            "#0B3954"
-        );
-
-        setImportant(
-            button,
-            "color",
-            "#ffffff"
-        );
-
-        setImportant(
-            button,
-            "border",
-            "2px solid #0B3954"
         );
 
         getNavigationLinks().forEach(
@@ -1290,25 +1325,21 @@
                 "fbr-mobile-translate"
             );
 
-        var translateElement;
-        var gadget;
-        var combo;
-
         if (!slot) {
             return;
         }
 
-        translateElement =
+        var translateElement =
             slot.querySelector(
                 "#google_translate_element"
             );
 
-        gadget =
+        var gadget =
             slot.querySelector(
                 ".goog-te-gadget"
             );
 
-        combo =
+        var combo =
             slot.querySelector(
                 ".goog-te-combo"
             );
@@ -1465,10 +1496,6 @@
     }
 
     function moveTranslateIntoMenu() {
-        var slot;
-        var translateElement;
-        var source;
-
         if (
             !html.classList.contains(
                 "fbr-mobile"
@@ -1477,12 +1504,12 @@
             return false;
         }
 
-        slot =
+        var slot =
             document.getElementById(
                 "fbr-mobile-translate"
             );
 
-        translateElement =
+        var translateElement =
             findTranslateElement();
 
         if (
@@ -1496,7 +1523,7 @@
             translateElement.parentElement !==
             slot
         ) {
-            source =
+            var source =
                 closestBuilderElement(
                     translateElement
                 );
@@ -1526,15 +1553,12 @@
         var maximumAttempts = 40;
 
         function tryMove() {
-            var moved;
-            var combo;
-
             attempts += 1;
 
-            moved =
+            var moved =
                 moveTranslateIntoMenu();
 
-            combo =
+            var combo =
                 document.querySelector(
                     "#fbr-mobile-translate .goog-te-combo"
                 );
@@ -1562,10 +1586,6 @@
     }
 
     function createMobileActions() {
-        var actions;
-        var callButton;
-        var requestButton;
-
         if (
             document.getElementById(
                 "fbr-mobile-actions"
@@ -1574,13 +1594,13 @@
             return;
         }
 
-        actions =
+        var actions =
             document.createElement("div");
 
-        callButton =
+        var callButton =
             document.createElement("a");
 
-        requestButton =
+        var requestButton =
             document.createElement("a");
 
         actions.id =
@@ -1598,8 +1618,7 @@
         callButton.textContent =
             "Call for a Ride";
 
-        requestButton.href =
-            "/request-ride-now-.html";
+        requestButton.href = "/";
 
         requestButton.textContent =
             "Request Ride";
@@ -1654,14 +1673,11 @@
     }
 
     function markRequestWidgets() {
-        var container;
-        var candidates;
-
         if (!isRequestPage()) {
             return;
         }
 
-        container =
+        var container =
             document.getElementById(
                 "wsb-canvas-template-container"
             );
@@ -1670,7 +1686,7 @@
             return;
         }
 
-        candidates =
+        var candidates =
             Array.prototype.slice.call(
                 container.querySelectorAll(
                     ".wsb-element-htmlsnippet, " +
@@ -1705,6 +1721,15 @@
 
         candidates.forEach(
             function (element) {
+                if (
+                    element.querySelector &&
+                    element.querySelector(
+                        "#google_translate_element, .goog-te-gadget"
+                    )
+                ) {
+                    return;
+                }
+
                 var builderElement =
                     closestBuilderElement(
                         element
@@ -1724,7 +1749,10 @@
                 );
 
                 if (
-                    originalHeight > 0
+                    originalHeight > 0 &&
+                    !builderElement.getAttribute(
+                        "data-fbr-original-height"
+                    )
                 ) {
                     builderElement.setAttribute(
                         "data-fbr-original-height",
@@ -1738,8 +1766,6 @@
     }
 
     function fixRequestPage() {
-        var widgets;
-
         if (
             !isRequestPage() ||
             !html.classList.contains(
@@ -1755,207 +1781,198 @@
 
         markRequestWidgets();
 
-        widgets =
-            Array.prototype.slice.call(
-                document.querySelectorAll(
-                    ".fbr-request-widget"
-                )
+        Array.prototype.slice.call(
+            document.querySelectorAll(
+                ".fbr-request-widget"
+            )
+        ).forEach(function (widget) {
+            var originalHeight =
+                parseFloat(
+                    widget.getAttribute(
+                        "data-fbr-original-height"
+                    )
+                ) ||
+                0;
+
+            var iframe =
+                widget.querySelector(
+                    "iframe:not(.goog-te-banner-frame)"
+                );
+
+            setImportant(
+                widget,
+                "position",
+                "relative"
             );
 
-        widgets.forEach(
-            function (widget) {
-                var originalHeight =
+            setImportant(
+                widget,
+                "display",
+                "block"
+            );
+
+            setImportant(
+                widget,
+                "width",
+                "100%"
+            );
+
+            setImportant(
+                widget,
+                "min-width",
+                "0px"
+            );
+
+            setImportant(
+                widget,
+                "max-width",
+                "100%"
+            );
+
+            setImportant(
+                widget,
+                "height",
+                "auto"
+            );
+
+            setImportant(
+                widget,
+                "margin",
+                "0px"
+            );
+
+            setImportant(
+                widget,
+                "padding",
+                "0px"
+            );
+
+            setImportant(
+                widget,
+                "overflow",
+                "visible"
+            );
+
+            setImportant(
+                widget,
+                "transform",
+                "none"
+            );
+
+            if (iframe) {
+                var iframeHeight =
                     parseFloat(
-                        widget.getAttribute(
-                            "data-fbr-original-height"
+                        iframe.getAttribute(
+                            "height"
                         )
                     ) ||
-                    0;
+                    parseFloat(
+                        iframe.style.height
+                    ) ||
+                    iframe
+                        .getBoundingClientRect()
+                        .height ||
+                    originalHeight ||
+                    1500;
 
-                var iframe =
-                    widget.querySelector(
-                        "iframe:not(.goog-te-banner-frame)"
+                iframeHeight =
+                    Math.max(
+                        1500,
+                        iframeHeight
                     );
 
                 setImportant(
-                    widget,
+                    iframe,
                     "position",
                     "relative"
                 );
 
                 setImportant(
-                    widget,
+                    iframe,
                     "display",
                     "block"
                 );
 
                 setImportant(
-                    widget,
+                    iframe,
                     "width",
+                    "1px"
+                );
+
+                setImportant(
+                    iframe,
+                    "min-width",
                     "100%"
                 );
 
                 setImportant(
-                    widget,
-                    "min-width",
-                    "0px"
-                );
-
-                setImportant(
-                    widget,
+                    iframe,
                     "max-width",
                     "100%"
                 );
 
                 setImportant(
-                    widget,
+                    iframe,
                     "height",
-                    "auto"
+                    Math.ceil(
+                        iframeHeight
+                    ) + "px"
                 );
 
                 setImportant(
-                    widget,
+                    iframe,
+                    "min-height",
+                    Math.ceil(
+                        iframeHeight
+                    ) + "px"
+                );
+
+                setImportant(
+                    iframe,
                     "margin",
                     "0px"
                 );
 
                 setImportant(
-                    widget,
+                    iframe,
                     "padding",
                     "0px"
                 );
 
                 setImportant(
-                    widget,
-                    "overflow",
-                    "visible"
+                    iframe,
+                    "border",
+                    "0px"
                 );
 
                 setImportant(
-                    widget,
+                    iframe,
                     "transform",
                     "none"
                 );
 
-                if (
-                    originalHeight > 0 &&
-                    !iframe
-                ) {
-                    setImportant(
-                        widget,
-                        "min-height",
-                        Math.ceil(
-                            originalHeight
-                        ) + "px"
-                    );
-                }
-
-                if (iframe) {
-                    var iframeHeight =
-                        parseFloat(
-                            iframe.getAttribute(
-                                "height"
-                            )
-                        ) ||
-                        parseFloat(
-                            iframe.style.height
-                        ) ||
-                        iframe
-                            .getBoundingClientRect()
-                            .height ||
-                        1500;
-
-                    iframeHeight =
-                        Math.max(
-                            1500,
-                            iframeHeight
-                        );
-
-                    setImportant(
-                        iframe,
-                        "position",
-                        "relative"
-                    );
-
-                    setImportant(
-                        iframe,
-                        "display",
-                        "block"
-                    );
-
-                    setImportant(
-                        iframe,
-                        "width",
-                        "1px"
-                    );
-
-                    setImportant(
-                        iframe,
-                        "min-width",
-                        "100%"
-                    );
-
-                    setImportant(
-                        iframe,
-                        "max-width",
-                        "100%"
-                    );
-
-                    setImportant(
-                        iframe,
-                        "height",
-                        Math.ceil(
-                            iframeHeight
-                        ) + "px"
-                    );
-
-                    setImportant(
-                        iframe,
-                        "min-height",
-                        Math.ceil(
-                            iframeHeight
-                        ) + "px"
-                    );
-
-                    setImportant(
-                        iframe,
-                        "margin",
-                        "0px"
-                    );
-
-                    setImportant(
-                        iframe,
-                        "padding",
-                        "0px"
-                    );
-
-                    setImportant(
-                        iframe,
-                        "border",
-                        "0px"
-                    );
-
-                    setImportant(
-                        iframe,
-                        "transform",
-                        "none"
-                    );
-
-                    setImportant(
-                        widget,
-                        "min-height",
-                        Math.ceil(
-                            iframeHeight
-                        ) + "px"
-                    );
-                }
+                setImportant(
+                    widget,
+                    "min-height",
+                    Math.ceil(
+                        iframeHeight
+                    ) + "px"
+                );
+            } else if (
+                originalHeight > 0
+            ) {
+                setImportant(
+                    widget,
+                    "min-height",
+                    Math.ceil(
+                        originalHeight
+                    ) + "px"
+                );
             }
-        );
+        });
     }
 
     function stackElements(container) {
-        var items;
-
         if (
             !container ||
             container.getAttribute(
@@ -1965,9 +1982,11 @@
             return;
         }
 
-        items =
+        var items =
             Array.prototype.slice
-                .call(container.children)
+                .call(
+                    container.children
+                )
                 .filter(
                     function (element) {
                         if (
@@ -2086,11 +2105,6 @@
                 ".wsb-element-gallery"
             )
         ).forEach(function (gallery) {
-            var computed;
-            var rect;
-            var width;
-            var height;
-
             if (
                 gallery.getAttribute(
                     "data-fbr-original-width"
@@ -2099,16 +2113,16 @@
                 return;
             }
 
-            computed =
+            var computed =
                 window.getComputedStyle(
                     gallery
                 );
 
-            rect =
+            var rect =
                 gallery
                     .getBoundingClientRect();
 
-            width =
+            var width =
                 parseFloat(
                     gallery.style.width
                 ) ||
@@ -2118,7 +2132,7 @@
                 rect.width ||
                 gallery.offsetWidth;
 
-            height =
+            var height =
                 parseFloat(
                     gallery.style.height
                 ) ||
@@ -2163,8 +2177,6 @@
                 ".wsb-element-gallery"
             )
         ).forEach(function (gallery) {
-            var wrapper;
-
             if (
                 gallery.parentElement &&
                 gallery.parentElement
@@ -2179,7 +2191,7 @@
                 return;
             }
 
-            wrapper =
+            var wrapper =
                 document.createElement(
                     "div"
                 );
@@ -2187,11 +2199,10 @@
             wrapper.className =
                 "fbr-gallery-wrapper";
 
-            gallery.parentNode
-                .insertBefore(
-                    wrapper,
-                    gallery
-                );
+            gallery.parentNode.insertBefore(
+                wrapper,
+                gallery
+            );
 
             wrapper.appendChild(
                 gallery
@@ -2218,24 +2229,18 @@
                     ".wsb-element-gallery"
                 );
 
-            var originalWidth;
-            var originalHeight;
-            var availableWidth;
-            var scale;
-            var scaledHeight;
-
             if (!gallery) {
                 return;
             }
 
-            originalWidth =
+            var originalWidth =
                 parseFloat(
                     gallery.getAttribute(
                         "data-fbr-original-width"
                     )
                 );
 
-            originalHeight =
+            var originalHeight =
                 parseFloat(
                     gallery.getAttribute(
                         "data-fbr-original-height"
@@ -2249,7 +2254,7 @@
                 return;
             }
 
-            availableWidth =
+            var availableWidth =
                 wrapper.clientWidth ||
                 (
                     wrapper.parentElement
@@ -2264,14 +2269,14 @@
                     36
                 );
 
-            scale =
+            var scale =
                 Math.min(
                     1,
                     availableWidth /
                     originalWidth
                 );
 
-            scaledHeight =
+            var scaledHeight =
                 Math.max(
                     1,
                     Math.round(
@@ -2365,12 +2370,245 @@
         resizeGalleries();
     }
 
+    function repairDocumentHeight() {
+        if (
+            !html.classList.contains(
+                "fbr-mobile"
+            )
+        ) {
+            return;
+        }
+
+        var body =
+            document.body;
+
+        var canvas =
+            document.querySelector(
+                ".wsb-canvas.body"
+            );
+
+        var pageContainer =
+            document.querySelector(
+                ".wsb-canvas-page-container"
+            );
+
+        var page =
+            document.getElementById(
+                "wsb-canvas-template-page"
+            );
+
+        var content =
+            document.getElementById(
+                "wsb-canvas-template-container"
+            );
+
+        var footer =
+            document.getElementById(
+                "wsb-canvas-template-footer"
+            );
+
+        var footerContainer =
+            document.getElementById(
+                "wsb-canvas-template-footer-container"
+            );
+
+        var mobileHeader =
+            document.getElementById(
+                "fbr-mobile-header"
+            );
+
+        var mobileActions =
+            document.getElementById(
+                "fbr-mobile-actions"
+            );
+
+        var headerHeight =
+            mobileHeader
+                ? Math.ceil(
+                    mobileHeader
+                        .getBoundingClientRect()
+                        .height
+                )
+                : 0;
+
+        var actionHeight =
+            mobileActions
+                ? Math.ceil(
+                    mobileActions
+                        .getBoundingClientRect()
+                        .height
+                )
+                : 76;
+
+        var viewportHeight =
+            window.innerHeight ||
+            document.documentElement
+                .clientHeight ||
+            0;
+
+        setImportant(
+            html,
+            "height",
+            "auto"
+        );
+
+        setImportant(
+            html,
+            "min-height",
+            "100%"
+        );
+
+        setImportant(
+            body,
+            "height",
+            "auto"
+        );
+
+        setImportant(
+            body,
+            "min-height",
+            "100vh"
+        );
+
+        setImportant(
+            body,
+            "max-height",
+            "none"
+        );
+
+        setImportant(
+            body,
+            "overflow-y",
+            "auto"
+        );
+
+        setImportant(
+            body,
+            "padding-bottom",
+            actionHeight + "px"
+        );
+
+        [
+            canvas,
+            pageContainer,
+            page,
+            content,
+            footer,
+            footerContainer
+        ].forEach(function (element) {
+            if (!element) {
+                return;
+            }
+
+            setImportant(
+                element,
+                "height",
+                "auto"
+            );
+
+            setImportant(
+                element,
+                "max-height",
+                "none"
+            );
+
+            setImportant(
+                element,
+                "overflow",
+                "visible"
+            );
+        });
+
+        if (canvas) {
+            setImportant(
+                canvas,
+                "min-height",
+                "100vh"
+            );
+        }
+
+        if (pageContainer) {
+            setImportant(
+                pageContainer,
+                "min-height",
+                "calc(100vh - " +
+                    actionHeight +
+                    "px)"
+            );
+        }
+
+        /*
+         * Only the actual Home page receives the
+         * homepage minimum-height repair.
+         */
+        if (
+            page &&
+            isHomePage()
+        ) {
+            var minimumPageHeight =
+                Math.max(
+                    0,
+                    viewportHeight -
+                    headerHeight -
+                    actionHeight
+                );
+
+            setImportant(
+                page,
+                "min-height",
+                minimumPageHeight +
+                    "px"
+            );
+        }
+
+        if (footer) {
+            setImportant(
+                footer,
+                "top",
+                "auto"
+            );
+
+            setImportant(
+                footer,
+                "bottom",
+                "auto"
+            );
+
+            setImportant(
+                footer,
+                "clear",
+                "both"
+            );
+        }
+
+        if (footerContainer) {
+            setImportant(
+                footerContainer,
+                "top",
+                "auto"
+            );
+
+            setImportant(
+                footerContainer,
+                "bottom",
+                "auto"
+            );
+
+            setImportant(
+                footerContainer,
+                "clear",
+                "both"
+            );
+        }
+    }
+
     function runMobileRepairs() {
         hideLegacyNavigation();
         moveTranslateIntoMenu();
         styleTranslateElement();
         syncGalleries();
         fixRequestPage();
+        repairDocumentHeight();
     }
 
     function observePage() {
@@ -2379,12 +2617,12 @@
                 "MutationObserver" in
                 window
             ) ||
-            observer
+            pageObserver
         ) {
             return;
         }
 
-        observer =
+        pageObserver =
             new MutationObserver(
                 function () {
                     window.clearTimeout(
@@ -2399,7 +2637,7 @@
                 }
             );
 
-        observer.observe(
+        pageObserver.observe(
             document.body,
             {
                 childList: true,
@@ -2408,11 +2646,40 @@
         );
     }
 
+    function applyRouteClasses() {
+        if (isRequestPage()) {
+            document.body.classList.add(
+                "fbr-request-page"
+            );
+
+            document.body.classList.remove(
+                "fbr-home-page"
+            );
+        } else if (isHomePage()) {
+            document.body.classList.add(
+                "fbr-home-page"
+            );
+
+            document.body.classList.remove(
+                "fbr-request-page"
+            );
+        } else {
+            document.body.classList.remove(
+                "fbr-request-page",
+                "fbr-home-page"
+            );
+        }
+    }
+
     function applyMobileLayout() {
         if (!isMobileWidth()) {
             return;
         }
 
+        /*
+         * Capture dimensions before applying mobile
+         * positioning rules.
+         */
         captureGallerySizes();
         markTranslateSource();
         markRequestWidgets();
@@ -2422,12 +2689,7 @@
             "fbr-mobile"
         );
 
-        if (isRequestPage()) {
-            document.body.classList.add(
-                "fbr-request-page"
-            );
-        }
-
+        applyRouteClasses();
         hideLegacyNavigation();
 
         stackElements(
@@ -2446,27 +2708,45 @@
         createMobileActions();
         syncGalleries();
         fixRequestPage();
+        repairDocumentHeight();
         observePage();
 
-        window.setTimeout(
-            runMobileRepairs,
-            100
-        );
+        [
+            100,
+            500,
+            1500,
+            3000,
+            5000
+        ].forEach(function (delay) {
+            window.setTimeout(
+                runMobileRepairs,
+                delay
+            );
+        });
 
-        window.setTimeout(
-            runMobileRepairs,
-            500
-        );
+        Array.prototype.slice.call(
+            document.querySelectorAll(
+                "img"
+            )
+        ).forEach(function (image) {
+            if (!image.complete) {
+                image.addEventListener(
+                    "load",
+                    runMobileRepairs,
+                    {
+                        once: true
+                    }
+                );
 
-        window.setTimeout(
-            runMobileRepairs,
-            1500
-        );
-
-        window.setTimeout(
-            runMobileRepairs,
-            3000
-        );
+                image.addEventListener(
+                    "error",
+                    runMobileRepairs,
+                    {
+                        once: true
+                    }
+                );
+            }
+        });
     }
 
     function initialize() {
@@ -2490,6 +2770,15 @@
     } else {
         initialize();
     }
+
+    window.addEventListener(
+        "load",
+        function () {
+            if (isMobileWidth()) {
+                runMobileRepairs();
+            }
+        }
+    );
 
     window.addEventListener(
         "resize",
@@ -2518,6 +2807,21 @@
                     },
                     300
                 );
+        }
+    );
+
+    window.addEventListener(
+        "orientationchange",
+        function () {
+            window.setTimeout(
+                runMobileRepairs,
+                150
+            );
+
+            window.setTimeout(
+                runMobileRepairs,
+                600
+            );
         }
     );
 })();
